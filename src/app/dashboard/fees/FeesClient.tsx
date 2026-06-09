@@ -60,17 +60,17 @@ export default function FeesClient({ initialData }: { initialData: any }) {
   })();
 
   const filteredFees = groupedFeesList.filter((fee: any) => {
-    const matchesSearch = fee.student_name?.toLowerCase().includes(search.toLowerCase()) || 
-                          fee.batch_name?.toLowerCase().includes(search.toLowerCase()) ||
-                          fee.enrollment_id?.toLowerCase().includes(search.toLowerCase());
-    
+    const matchesSearch = fee.student_name?.toLowerCase().includes(search.toLowerCase()) ||
+      fee.batch_name?.toLowerCase().includes(search.toLowerCase()) ||
+      fee.roll_number?.toLowerCase().includes(search.toLowerCase());
+
     const totalExpected = Number(fee.course_total_fee) || 0;
     const totalPaid = Number(fee.course_paid_amount) || 0;
     const pending = Math.max(0, totalExpected - totalPaid);
-    
-    const matchesFilter = filter === "all" || 
-                          (filter === "paid" && pending === 0) || 
-                          (filter === "pending" && pending > 0);
+
+    const matchesFilter = filter === "all" ||
+      (filter === "paid" && pending === 0) ||
+      (filter === "pending" && pending > 0);
     return matchesSearch && matchesFilter;
   });
 
@@ -134,7 +134,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
           </div>
           <p className="text-2xl font-bold text-neutral-100">{formatCurrency(metrics.totalPending)}</p>
         </Card>
-        
+
         <Card className="p-6 border-neutral-700/50 bg-[#2b2b2b]">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-neutral-800 rounded-md">
@@ -168,7 +168,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
             className="w-full pl-10 pr-4 py-2 bg-[#1e1e1e] border border-neutral-800 rounded-lg text-sm text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#a4c2b5] transition-all"
           />
         </div>
-        <select 
+        <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="bg-[#1e1e1e] border border-neutral-800 text-neutral-200 text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#a4c2b5]"
@@ -186,7 +186,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
             <thead className="text-xs text-neutral-500 uppercase bg-[#1e1e1e]/50 border-b border-neutral-800">
               <tr>
                 <th className="px-6 py-4 font-medium">Student</th>
-                <th className="px-6 py-4 font-medium">Enrollment ID</th>
+                <th className="px-6 py-4 font-medium">Roll No.</th>
                 <th className="px-6 py-4 font-medium">Batch</th>
                 <th className="px-6 py-4 font-medium">Fee Amount</th>
                 <th className="px-6 py-4 font-medium">Batch Pending</th>
@@ -209,8 +209,8 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs font-mono text-neutral-400 select-all" title={fee.enrollment_id}>
-                      {fee.enrollment_id ? `${fee.enrollment_id.substring(0, 8)}...` : 'N/A'}
+                    <td className="px-6 py-4 text-neutral-200">
+                      {fee.roll_number || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-neutral-200">{fee.batch_name || 'N/A'}</td>
                     <td className="px-6 py-4 font-medium text-neutral-200">{formatCurrency(fee.amount)}</td>
@@ -224,11 +224,11 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                       )}
                     </td>
                     <td className="px-6 py-4">{formatDate(fee.payment_date || fee.created_at)}</td>
-                  
+
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-3">
                         {fee.unpaidFee ? (
-                          <button 
+                          <button
                             onClick={() => handleRecordPayment(fee.unpaidFee)}
                             className="text-[#a4c2b5] hover:text-[#8eb0a2] font-medium transition-colors text-sm"
                           >
@@ -237,7 +237,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                         ) : (
                           <span className="text-neutral-500 text-sm">Paid</span>
                         )}
-                        <button 
+                        <button
                           onClick={() => handleShowHistory(fee)}
                           className="text-neutral-400 hover:text-neutral-200 font-medium transition-colors text-sm flex items-center gap-1"
                         >
@@ -261,7 +261,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
             <form onSubmit={onConfirmPayment}>
               <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-4 bg-[#262626]">
                 <h2 className="text-lg font-bold text-neutral-100">Record Payment</h2>
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
                   className="text-neutral-400 hover:text-neutral-200 transition-colors"
@@ -269,7 +269,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              
+
               <div className="p-6 space-y-4">
                 {error && <div className="p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-xs text-red-400">{error}</div>}
 
@@ -317,18 +317,18 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                     className="w-full rounded-lg border border-neutral-700 bg-[#1e1e1e] px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-[#a4c2b5]"
                   />
                 </div>
-               
+
               </div>
-              
+
               <div className="border-t border-neutral-800 px-6 py-4 bg-[#262626] flex justify-end gap-3">
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-300 hover:bg-neutral-800 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={isSubmitting}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-[#a4c2b5] text-neutral-900 hover:bg-[#8eb0a2] transition-colors flex items-center gap-2"
@@ -353,7 +353,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                   Showing all fee records for <span className="capitalize text-neutral-200 font-medium">{selectedHistoryEnrollment.student_name}</span>
                 </p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowHistoryModal(false)}
                 className="text-neutral-400 hover:text-neutral-200 transition-colors"
@@ -361,7 +361,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
               {/* Enrollment Info & Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -369,7 +369,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                   <Avatar initials={selectedHistoryEnrollment.student_name?.[0]} className="w-10 h-10" />
                   <div>
                     <p className="font-semibold text-neutral-100 capitalize font-sans">{selectedHistoryEnrollment.student_name}</p>
-                    <p className="text-xs text-neutral-400 font-mono select-all">ID: {selectedHistoryEnrollment.enrollment_id}</p>
+                    <p className="text-xs text-neutral-400 font-mono select-all">Roll No: {selectedHistoryEnrollment.roll_number || 'N/A'}</p>
                     <p className="text-xs text-neutral-400 mt-0.5 font-sans">Batch: {selectedHistoryEnrollment.batch_name || 'N/A'}</p>
                   </div>
                 </div>
@@ -424,17 +424,16 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                           <td className="px-4 py-3">{isRecordPaid ? formatDate(record.payment_date) : 'N/A'}</td>
                           <td className="px-4 py-3">{record.payment_method || 'N/A'}</td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
-                              isRecordPaid 
-                                ? 'text-green-400 bg-green-950/20 border-green-900/30' 
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${isRecordPaid
+                                ? 'text-green-400 bg-green-950/20 border-green-900/30'
                                 : 'text-red-400 bg-red-950/20 border-red-900/30'
-                            }`}>
+                              }`}>
                               {isRecordPaid ? 'Paid' : 'Pending'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             {!isRecordPaid ? (
-                              <button 
+                              <button
                                 onClick={() => {
                                   setShowHistoryModal(false);
                                   handleRecordPayment(record);
@@ -454,9 +453,9 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                 </table>
               </div>
             </div>
-            
+
             <div className="border-t border-neutral-800 px-6 py-4 bg-[#262626] flex justify-end font-sans">
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowHistoryModal(false)}
                 className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm font-medium text-neutral-200 transition-colors"
