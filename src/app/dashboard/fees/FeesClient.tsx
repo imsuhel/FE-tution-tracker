@@ -164,7 +164,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                         const pending = Math.max(0, totalExpected - totalPaid);
                         return (
                           <span className={`font-medium ${pending > 0 ? 'text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30' : 'text-green-400 bg-green-950/20 px-2 py-0.5 rounded border border-green-900/30'}`}>
-                            {formatCurrency(pending)}
+                            {pending > 0 ? formatCurrency(pending) : 'Full Paid'}
                           </span>
                         );
                       })()
