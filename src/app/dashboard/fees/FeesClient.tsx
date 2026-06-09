@@ -24,7 +24,10 @@ export default function FeesClient({ initialData }: { initialData: any }) {
   const filteredFees = fees.filter((fee: any) => {
     const matchesSearch = fee.student_name?.toLowerCase().includes(search.toLowerCase()) || 
                           fee.batch_name?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || fee.status === filter;
+    const isPaid = fee.paid === 1 || fee.paid === true;
+    const matchesFilter = filter === "all" || 
+                          (filter === "paid" && isPaid) || 
+                          (filter === "pending" && !isPaid);
     return matchesSearch && matchesFilter;
   });
 
@@ -125,7 +128,6 @@ export default function FeesClient({ initialData }: { initialData: any }) {
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
           <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
         </select>
       </div>
 
@@ -175,7 +177,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                   <td className="px-6 py-4">{formatDate(fee.payment_date || fee.created_at)}</td>
                 
                   <td className="px-6 py-4 text-right">
-                    {fee.status !== "paid" ? (
+                    {!(fee.paid === 1 || fee.paid === true) ? (
                       <button 
                         onClick={() => handleRecordPayment(fee)}
                         className="text-[#a4c2b5] hover:text-[#8eb0a2] font-medium transition-colors"
