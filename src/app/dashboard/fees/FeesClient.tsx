@@ -16,14 +16,53 @@ export default function FeesClient({ initialData }: { initialData: any }) {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [error, setError] = useState("");
 
+  // Payment History Modal States
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedHistoryEnrollment, setSelectedHistoryEnrollment] = useState<any | null>(null);
+
   const { fees = [], metrics = { totalPending: 0, collectedThisMonth: 0, overdue: 0 } } = initialData || {};
 
   const formatCurrency = (amount: number) => `₹${(amount || 0).toLocaleString('en-IN')}`;
   const formatDate = (dateStr: string) => dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
-  const filteredFees = fees.filter((fee: any) => {
+  // Group fees by enrollment_id to display student-wise latest payments
+  const groupedFeesList = (() => {
+    const groups = new Map<string, any[]>();
+    fees.forEach((fee: any) => {
+      const key = fee.enrollment_id;
+      if (key) {
+        if (!groups.has(key)) {
+          groups.set(key, []);
+        }
+        groups.get(key)!.push(fee);
+      }
+    });
+
+    const list: any[] = [];
+    groups.forEach((records) => {
+      // Sort records by date descending (latest first)
+      const sorted = [...records].sort((a, b) => {
+        const dateA = new Date(a.payment_date || a.created_at).getTime();
+        const dateB = new Date(b.payment_date || b.created_at).getTime();
+        return dateB - dateA;
+      });
+
+      const latest = sorted[0];
+      const unpaidFee = sorted.find(r => !(r.paid === 1 || r.paid === true));
+
+      list.push({
+        ...latest,
+        unpaidFee,
+        allRecords: sorted,
+      });
+    });
+    return list;
+  })();
+
+  const filteredFees = groupedFeesList.filter((fee: any) => {
     const matchesSearch = fee.student_name?.toLowerCase().includes(search.toLowerCase()) || 
-                          fee.batch_name?.toLowerCase().includes(search.toLowerCase());
+                          fee.batch_name?.toLowerCase().includes(search.toLowerCase()) ||
+                          fee.enrollment_id?.toLowerCase().includes(search.toLowerCase());
     
     const totalExpected = Number(fee.course_total_fee) || 0;
     const totalPaid = Number(fee.course_paid_amount) || 0;
@@ -39,6 +78,11 @@ export default function FeesClient({ initialData }: { initialData: any }) {
     setSelectedFee(fee);
     setPaymentAmount(fee.amount?.toString() || "");
     setShowPaymentModal(true);
+  };
+
+  const handleShowHistory = (fee: any) => {
+    setSelectedHistoryEnrollment(fee);
+    setShowHistoryModal(true);
   };
 
   const onConfirmPayment = async (e: React.FormEvent) => {
@@ -142,6 +186,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
             <thead className="text-xs text-neutral-500 uppercase bg-[#1e1e1e]/50 border-b border-neutral-800">
               <tr>
                 <th className="px-6 py-4 font-medium">Student</th>
+                <th className="px-6 py-4 font-medium">Enrollment ID</th>
                 <th className="px-6 py-4 font-medium">Batch</th>
                 <th className="px-6 py-4 font-medium">Fee Amount</th>
                 <th className="px-6 py-4 font-medium">Batch Pending</th>
@@ -150,50 +195,60 @@ export default function FeesClient({ initialData }: { initialData: any }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800/50">
-              {filteredFees.map((fee: any) => (
-                <tr key={fee.id} className="hover:bg-neutral-800/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar initials={fee.student_name?.[0]} className="w-8 h-8 text-xs" />
-                      <div>
-                        <p className="font-medium text-neutral-200 capitalize">{fee.student_name}</p>
+              {filteredFees.map((fee: any) => {
+                const totalExpected = Number(fee.course_total_fee) || 0;
+                const totalPaid = Number(fee.course_paid_amount) || 0;
+                const pending = Math.max(0, totalExpected - totalPaid);
+                return (
+                  <tr key={fee.id} className="hover:bg-neutral-800/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={fee.student_name?.[0]} className="w-8 h-8 text-xs" />
+                        <div>
+                          <p className="font-medium text-neutral-200 capitalize">{fee.student_name}</p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-neutral-200">{fee.batch_name || 'N/A'}</td>
-                  <td className="px-6 py-4 font-medium text-neutral-200">{formatCurrency(fee.amount)}</td>
-                  <td className="px-6 py-4">
-                    {fee.course_total_fee !== undefined ? (
-                      (() => {
-                        const totalExpected = Number(fee.course_total_fee) || 0;
-                        const totalPaid = Number(fee.course_paid_amount) || 0;
-                        const pending = Math.max(0, totalExpected - totalPaid);
-                        return (
-                          <span className={`font-medium ${pending > 0 ? 'text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30' : 'text-green-400 bg-green-950/20 px-2 py-0.5 rounded border border-green-900/30'}`}>
-                            {pending > 0 ? formatCurrency(pending) : 'Full Paid'}
-                          </span>
-                        );
-                      })()
-                    ) : (
-                      <span className="text-neutral-500">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">{formatDate(fee.payment_date || fee.created_at)}</td>
-                
-                  <td className="px-6 py-4 text-right">
-                    {!(fee.paid === 1 || fee.paid === true) ? (
-                      <button 
-                        onClick={() => handleRecordPayment(fee)}
-                        className="text-[#a4c2b5] hover:text-[#8eb0a2] font-medium transition-colors"
-                      >
-                        Record Payment
-                      </button>
-                    ) : (
-                      <span className="text-neutral-500">Paid</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-mono text-neutral-400 select-all" title={fee.enrollment_id}>
+                      {fee.enrollment_id ? `${fee.enrollment_id.substring(0, 8)}...` : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-neutral-200">{fee.batch_name || 'N/A'}</td>
+                    <td className="px-6 py-4 font-medium text-neutral-200">{formatCurrency(fee.amount)}</td>
+                    <td className="px-6 py-4">
+                      {fee.course_total_fee !== undefined ? (
+                        <span className={`font-medium ${pending > 0 ? 'text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30' : 'text-green-400 bg-green-950/20 px-2 py-0.5 rounded border border-green-900/30'}`}>
+                          {pending > 0 ? formatCurrency(pending) : 'Full Paid'}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-500">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">{formatDate(fee.payment_date || fee.created_at)}</td>
+                  
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        {fee.unpaidFee ? (
+                          <button 
+                            onClick={() => handleRecordPayment(fee.unpaidFee)}
+                            className="text-[#a4c2b5] hover:text-[#8eb0a2] font-medium transition-colors text-sm"
+                          >
+                            Record Payment
+                          </button>
+                        ) : (
+                          <span className="text-neutral-500 text-sm">Paid</span>
+                        )}
+                        <button 
+                          onClick={() => handleShowHistory(fee)}
+                          className="text-neutral-400 hover:text-neutral-200 font-medium transition-colors text-sm flex items-center gap-1"
+                        >
+                          <FileText className="w-4 h-4" />
+                          History
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -283,6 +338,132 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                 </button>
               </div>
             </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Payment History Modal */}
+      {showHistoryModal && selectedHistoryEnrollment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl bg-[#2b2b2b] border-neutral-800 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-4 bg-[#262626]">
+              <div>
+                <h2 className="text-lg font-bold text-neutral-100 font-sans">Payment History</h2>
+                <p className="text-xs text-neutral-400 mt-0.5 font-sans">
+                  Showing all fee records for <span className="capitalize text-neutral-200 font-medium">{selectedHistoryEnrollment.student_name}</span>
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="text-neutral-400 hover:text-neutral-200 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Enrollment Info & Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-4 bg-[#1e1e1e] rounded-lg border border-neutral-800">
+                  <Avatar initials={selectedHistoryEnrollment.student_name?.[0]} className="w-10 h-10" />
+                  <div>
+                    <p className="font-semibold text-neutral-100 capitalize font-sans">{selectedHistoryEnrollment.student_name}</p>
+                    <p className="text-xs text-neutral-400 font-mono select-all">ID: {selectedHistoryEnrollment.enrollment_id}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5 font-sans">Batch: {selectedHistoryEnrollment.batch_name || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {selectedHistoryEnrollment.course_total_fee !== undefined && (
+                  (() => {
+                    const totalExpected = Number(selectedHistoryEnrollment.course_total_fee) || 0;
+                    const totalPaid = Number(selectedHistoryEnrollment.course_paid_amount) || 0;
+                    const pending = Math.max(0, totalExpected - totalPaid);
+                    return (
+                      <div className="p-4 bg-[#1e1e1e] rounded-lg border border-neutral-800 text-xs space-y-1.5 flex flex-col justify-center font-sans">
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500">Course Total Expected:</span>
+                          <span className="text-neutral-300 font-medium">{formatCurrency(totalExpected)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500">Total Paid So Far:</span>
+                          <span className="text-green-400 font-medium">{formatCurrency(totalPaid)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-neutral-800/80 pt-1.5 mt-1 font-bold">
+                          <span className="text-neutral-400">Pending Balance:</span>
+                          <span className={pending > 0 ? 'text-red-400' : 'text-green-400'}>
+                            {pending > 0 ? formatCurrency(pending) : 'Fully Paid'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+
+              {/* Records List Table */}
+              <div className="border border-neutral-800 rounded-lg overflow-hidden bg-[#1e1e1e]">
+                <table className="w-full text-left text-xs text-neutral-400">
+                  <thead className="text-[10px] text-neutral-500 uppercase bg-[#262626] border-b border-neutral-800">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Month</th>
+                      <th className="px-4 py-3 font-medium">Amount</th>
+                      <th className="px-4 py-3 font-medium">Payment Date</th>
+                      <th className="px-4 py-3 font-medium">Method</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/50">
+                    {selectedHistoryEnrollment.allRecords.map((record: any) => {
+                      const isRecordPaid = record.paid === 1 || record.paid === true;
+                      return (
+                        <tr key={record.id} className="hover:bg-neutral-800/20 transition-colors">
+                          <td className="px-4 py-3 font-medium text-neutral-200">{record.month}</td>
+                          <td className="px-4 py-3 text-neutral-200">{formatCurrency(record.amount)}</td>
+                          <td className="px-4 py-3">{isRecordPaid ? formatDate(record.payment_date) : 'N/A'}</td>
+                          <td className="px-4 py-3">{record.payment_method || 'N/A'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
+                              isRecordPaid 
+                                ? 'text-green-400 bg-green-950/20 border-green-900/30' 
+                                : 'text-red-400 bg-red-950/20 border-red-900/30'
+                            }`}>
+                              {isRecordPaid ? 'Paid' : 'Pending'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {!isRecordPaid ? (
+                              <button 
+                                onClick={() => {
+                                  setShowHistoryModal(false);
+                                  handleRecordPayment(record);
+                                }}
+                                className="text-[#a4c2b5] hover:text-[#8eb0a2] font-semibold transition-colors"
+                              >
+                                Record Payment
+                              </button>
+                            ) : (
+                              <span className="text-neutral-500 font-medium">None</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="border-t border-neutral-800 px-6 py-4 bg-[#262626] flex justify-end font-sans">
+              <button 
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm font-medium text-neutral-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </Card>
         </div>
       )}
