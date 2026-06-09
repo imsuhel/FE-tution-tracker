@@ -24,10 +24,14 @@ export default function FeesClient({ initialData }: { initialData: any }) {
   const filteredFees = fees.filter((fee: any) => {
     const matchesSearch = fee.student_name?.toLowerCase().includes(search.toLowerCase()) || 
                           fee.batch_name?.toLowerCase().includes(search.toLowerCase());
-    const isPaid = fee.paid === 1 || fee.paid === true;
+    
+    const totalExpected = Number(fee.course_total_fee) || 0;
+    const totalPaid = Number(fee.course_paid_amount) || 0;
+    const pending = Math.max(0, totalExpected - totalPaid);
+    
     const matchesFilter = filter === "all" || 
-                          (filter === "paid" && isPaid) || 
-                          (filter === "pending" && !isPaid);
+                          (filter === "paid" && pending === 0) || 
+                          (filter === "pending" && pending > 0);
     return matchesSearch && matchesFilter;
   });
 
