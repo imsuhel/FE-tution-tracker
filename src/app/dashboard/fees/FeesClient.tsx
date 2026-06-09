@@ -20,7 +20,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryEnrollment, setSelectedHistoryEnrollment] = useState<any | null>(null);
 
-  const { fees = [], metrics = { totalPending: 0, collectedThisMonth: 0, overdue: 0 } } = initialData || {};
+  const { fees = [], metrics = { totalPending: 0, collectedThisMonth: 0, totalCollection: 0 } } = initialData || {};
 
   const formatCurrency = (amount: number) => `₹${(amount || 0).toLocaleString('en-IN')}`;
   const formatDate = (dateStr: string) => dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
@@ -148,11 +148,11 @@ export default function FeesClient({ initialData }: { initialData: any }) {
         <Card className="p-6 border-neutral-700/50 bg-[#2b2b2b]">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-neutral-800 rounded-md">
-              <AlertCircle className="w-5 h-5 text-red-500" />
+              <IndianRupee className="w-5 h-5 text-emerald-500" />
             </div>
-            <h2 className="text-sm font-medium text-neutral-400">Overdue Amount</h2>
+            <h2 className="text-sm font-medium text-neutral-400">Total Collection</h2>
           </div>
-          <p className="text-2xl font-bold text-red-500">{formatCurrency(metrics.overdue)}</p>
+          <p className="text-2xl font-bold text-neutral-100">{formatCurrency(metrics.totalCollection)}</p>
         </Card>
       </div>
 
