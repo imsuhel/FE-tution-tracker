@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Search, Filter, Eye, X, Loader2 } from "lucide-react";
+import { Search, Eye, X, Loader2, CalendarCheck, Users, FileBarChart2 } from "lucide-react";
 import Link from "next/link";
 import { createBatch } from "@/lib/actions/batch.actions";
 import { useRouter } from "next/navigation";
@@ -11,11 +11,13 @@ import { useRouter } from "next/navigation";
 export default function BatchesClient({ 
   initialBatches, 
   courses, 
-  teachers 
+  teachers,
+  todayAttendance = {},
 }: { 
-  initialBatches: any[], 
-  courses: any[], 
-  teachers: any[] 
+  initialBatches: any[]; 
+  courses: any[];
+  teachers: any[];
+  todayAttendance?: Record<string, number>;
 }) {
   const router = useRouter();
   const [batches, setBatches] = useState(initialBatches);
@@ -129,6 +131,7 @@ export default function BatchesClient({
                 <th className="px-6 py-4 font-medium">Batch Name</th>
                 <th className="px-6 py-4 font-medium">Linked Course</th>
                 <th className="px-6 py-4 font-medium">Capacity</th>
+                <th className="px-6 py-4 font-medium">Today's Attendance</th>
                 <th className="px-6 py-4 font-medium">Teacher Assigned</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
@@ -136,7 +139,7 @@ export default function BatchesClient({
             <tbody className="divide-y divide-neutral-800/50">
               {filteredBatches.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-neutral-500">No batches found.</td>
+                  <td colSpan={6} className="px-6 py-10 text-center text-neutral-500">No batches found.</td>
                 </tr>
               ) : (
                 filteredBatches.map((batch: any) => (
@@ -155,6 +158,21 @@ export default function BatchesClient({
                         )}
                       </div>
                     </td>
+                    {/* Today's Attendance column */}
+                    <td className="px-6 py-4">
+                      {batch.isOptimistic ? (
+                        <span className="text-neutral-600 text-xs">—</span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                          <span className="font-semibold text-neutral-100">
+                            {todayAttendance[batch.id] ?? 0}
+                          </span>
+                          <span className="text-neutral-500">/</span>
+                          <span className="text-neutral-400">{batch.student_count || 0}</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-neutral-200">{batch.teacher_name}</span>
@@ -164,12 +182,25 @@ export default function BatchesClient({
                     <td className="px-6 py-4 text-right">
                       {!batch.isOptimistic && (
                         <div className="flex items-center justify-end gap-2">
+                          {/* Mark Attendance */}
                           <Link
                             href={`/dashboard/batches/${batch.id}/attendance`}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#a4c2b5]/10 text-[#a4c2b5] border border-[#a4c2b5]/20 hover:bg-[#a4c2b5] hover:text-neutral-900 transition-all font-medium text-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#a4c2b5]/10 text-[#a4c2b5] border border-[#a4c2b5]/20 hover:bg-[#a4c2b5] hover:text-neutral-900 transition-all font-medium text-xs"
+                            title="Mark Attendance"
                           >
-                            Mark Attendance
+                            <CalendarCheck className="h-3.5 w-3.5" />
+                            Attendance
                           </Link>
+                          {/* Generate Marksheet */}
+                          <Link
+                            href={`/dashboard/batches/${batch.id}/marksheet`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-900/20 text-purple-400 border border-purple-900/40 hover:bg-purple-600 hover:text-white transition-all font-medium text-xs"
+                            title="Generate Marksheet"
+                          >
+                            <FileBarChart2 className="h-3.5 w-3.5" />
+                            Marksheet
+                          </Link>
+                          {/* View Batch */}
                           <Link
                             href={`/dashboard/batches/${batch.id}`}
                             className="inline-flex items-center justify-center p-1.5 rounded border border-neutral-700 text-neutral-300 hover:bg-neutral-700 hover:text-white transition-colors"

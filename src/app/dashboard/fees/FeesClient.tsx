@@ -74,12 +74,6 @@ export default function FeesClient({ initialData }: { initialData: any }) {
     return matchesSearch && matchesFilter;
   });
 
-  const handleRecordPayment = (fee: any) => {
-    setSelectedFee(fee);
-    setPaymentAmount(fee.amount?.toString() || "");
-    setShowPaymentModal(true);
-  };
-
   const handleShowHistory = (fee: any) => {
     setSelectedHistoryEnrollment(fee);
     setShowHistoryModal(true);
@@ -227,16 +221,7 @@ export default function FeesClient({ initialData }: { initialData: any }) {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        {fee.unpaidFee ? (
-                          <button
-                            onClick={() => handleRecordPayment(fee.unpaidFee)}
-                            className="text-[#a4c2b5] hover:text-[#8eb0a2] font-medium transition-colors text-sm"
-                          >
-                            Record Payment
-                          </button>
-                        ) : (
-                          <span className="text-neutral-500 text-sm">Paid</span>
-                        )}
+
                         <button
                           onClick={() => handleShowHistory(fee)}
                           className="text-neutral-400 hover:text-neutral-200 font-medium transition-colors text-sm flex items-center gap-1"
@@ -411,7 +396,6 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                       <th className="px-4 py-3 font-medium">Payment Date</th>
                       <th className="px-4 py-3 font-medium">Method</th>
                       <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/50">
@@ -425,43 +409,19 @@ export default function FeesClient({ initialData }: { initialData: any }) {
                           <td className="px-4 py-3">{record.payment_method || 'N/A'}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${isRecordPaid
-                                ? 'text-green-400 bg-green-950/20 border-green-900/30'
-                                : 'text-red-400 bg-red-950/20 border-red-900/30'
+                              ? 'text-green-400 bg-green-950/20 border-green-900/30'
+                              : 'text-red-400 bg-red-950/20 border-red-900/30'
                               }`}>
                               {isRecordPaid ? 'Paid' : 'Pending'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            {!isRecordPaid ? (
-                              <button
-                                onClick={() => {
-                                  setShowHistoryModal(false);
-                                  handleRecordPayment(record);
-                                }}
-                                className="text-[#a4c2b5] hover:text-[#8eb0a2] font-semibold transition-colors"
-                              >
-                                Record Payment
-                              </button>
-                            ) : (
-                              <span className="text-neutral-500 font-medium">None</span>
-                            )}
-                          </td>
+
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            <div className="border-t border-neutral-800 px-6 py-4 bg-[#262626] flex justify-end font-sans">
-              <button
-                type="button"
-                onClick={() => setShowHistoryModal(false)}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm font-medium text-neutral-200 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </Card>
         </div>

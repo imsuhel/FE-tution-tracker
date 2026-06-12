@@ -5,16 +5,25 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
-import { Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Eye, X, Loader2 } from "lucide-react";
+import {
+  Search,
+  Filter,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  X,
+  Loader2,
+} from "lucide-react";
 import Link from "next/link";
 import { createStudent } from "@/lib/actions/student.actions";
 
-export default function StudentsClient({ 
-  initialData, 
-  batches 
-}: { 
-  initialData: any, 
-  batches: any[] 
+export default function StudentsClient({
+  initialData,
+  batches,
+}: {
+  initialData: any;
+  batches: any[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,12 +42,12 @@ export default function StudentsClient({
   // URL state management
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== 'all') {
+    if (value && value !== "all") {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    params.set('page', '1'); // Reset to page 1 on filter change
+    params.set("page", "1"); // Reset to page 1 on filter change
     startTransition(() => {
       router.push(`/dashboard/students?${params.toString()}`);
     });
@@ -47,7 +56,7 @@ export default function StudentsClient({
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    updateQuery('search', formData.get('search') as string);
+    updateQuery("search", formData.get("search") as string);
   };
 
   const handleAddStudent = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -58,7 +67,7 @@ export default function StudentsClient({
     const formData = new FormData(e.currentTarget);
     const data: any = Object.fromEntries(formData.entries());
 
-    const batchIds = formData.getAll('batch_ids');
+    const batchIds = formData.getAll("batch_ids");
     if (batchIds.length > 0) {
       data.batch_ids = batchIds;
       delete data.batch_id; // Just to keep it clean if we had it
@@ -70,13 +79,13 @@ export default function StudentsClient({
       name: data.name,
       email: data.email,
       class: data.class,
-      roll_number: '...',
+      roll_number: "...",
       parent_name: data.parent_name,
       parent_phone: data.parent_phone,
       pending_amount: 0,
       total_amount: 0,
       paid_amount: 0,
-      isOptimistic: true
+      isOptimistic: true,
     };
 
     const previousStudents = [...students];
@@ -94,7 +103,8 @@ export default function StudentsClient({
     }
   };
 
-  const inputClass = "text-sm px-3 py-2 rounded-lg border border-neutral-700 bg-[#1e1e1e] text-neutral-100 focus:outline-none focus:ring-2 focus:ring-[#a4c2b5] transition-colors";
+  const inputClass =
+    "text-sm px-3 py-2 rounded-lg border border-neutral-700 bg-[#1e1e1e] text-neutral-100 focus:outline-none focus:ring-2 focus:ring-[#a4c2b5] transition-colors";
 
   return (
     <div className="flex flex-col gap-6">
@@ -206,7 +216,7 @@ export default function StudentsClient({
 
               <div className="space-y-3 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1e1e]/50 border border-neutral-800/50 flex-1">
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-neutral-800/50 flex-1">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">
                         Class
@@ -217,7 +227,7 @@ export default function StudentsClient({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1e1e]/50 border border-neutral-800/50 flex-1">
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-neutral-800/50 flex-1">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">
                         Enrollment ID
@@ -230,7 +240,7 @@ export default function StudentsClient({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1e1e]/50 border border-neutral-800/50 flex-1">
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-neutral-800/50 flex-1">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">
                         Parent / Phone
@@ -241,7 +251,7 @@ export default function StudentsClient({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1e1e]/50 border border-neutral-800/50 flex-1">
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-neutral-800/50 flex-1">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">
                         Parent / Phone
@@ -253,7 +263,7 @@ export default function StudentsClient({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1e1e]/50 border border-neutral-800/50">
+                <div className="flex items-center justify-between p-2 rounded-lg border border-neutral-800/50">
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">
                       Batch

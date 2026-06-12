@@ -112,6 +112,44 @@ export async function addCourseModule(courseId: string, moduleName: string) {
   }
 }
 
+export async function addCourseModulesBulk(courseId: string, moduleNames: string[]) {
+  try {
+    const headers = await getServerHeaders();
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/modules`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ modules: moduleNames }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) return { error: result.error || 'Failed to add modules' };
+
+    revalidatePath(`/dashboard/courses/${courseId}`);
+    return { success: true, modules: result.modules };
+  } catch (error) {
+    return { error: 'Internal server error' };
+  }
+}
+
+export async function updateCourseModule(courseId: string, moduleId: string, moduleName: string) {
+  try {
+    const headers = await getServerHeaders();
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/modules/${moduleId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ name: moduleName }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) return { error: result.error || 'Failed to update module' };
+
+    revalidatePath(`/dashboard/courses/${courseId}`);
+    return { success: true, module: result.module };
+  } catch (error) {
+    return { error: 'Internal server error' };
+  }
+}
+
 export async function deleteCourseModule(courseId: string, moduleId: string) {
   try {
     const headers = await getServerHeaders();

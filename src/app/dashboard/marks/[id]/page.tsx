@@ -5,12 +5,19 @@ import Link from "next/link";
 import { ArrowLeft, Search, Save, FileBarChart, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { ToastBanner } from "@/components/ui/ToastBanner";
 
 export default function MarksEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   
   const [search, setSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "error" | "success" | "info" | "warning" } | null>(null);
+
+  const showToast = (message: string, variant: "error" | "success" | "info" | "warning" = "error") => {
+    setToast({ message, variant });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   // --- MOCK DATA ---
   const examInfo = {
@@ -52,7 +59,7 @@ export default function MarksEntryPage({ params }: { params: Promise<{ id: strin
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      alert("Marks saved successfully!");
+      showToast("Marks saved successfully!", "success");
     }, 600);
   };
 
@@ -80,6 +87,12 @@ export default function MarksEntryPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto pb-12">
+      {/* Toast Banner */}
+      <ToastBanner
+        message={toast?.message ?? null}
+        variant={toast?.variant}
+        onClose={() => setToast(null)}
+      />
       {/* Header */}
       <div className="flex flex-col gap-4">
         <Link

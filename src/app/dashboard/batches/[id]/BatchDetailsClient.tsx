@@ -6,6 +6,8 @@ import { ArrowLeft, User, Search, Filter, Trash2, UserPlus, X, Loader2 } from "l
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ToastBanner } from "@/components/ui/ToastBanner";
 import { enrollStudent, unenrollStudent, updateBatch } from "@/lib/actions/batch.actions";
 import { useRouter } from "next/navigation";
 
@@ -27,9 +29,22 @@ export default function BatchDetailsClient({
   const [localSearch, setLocalSearch] = useState(""); // Search in enrolled
   const [modalSearch, setModalSearch] = useState(""); // Search in all students
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "error" | "success" | "info" | "warning" } | null>(null);
 
   const [batch, setBatch] = useState(initialBatch);
   const [students, setStudents] = useState(initialEnrolledStudents);
+
+  // Confirmation dialog for student removal
+  const [confirmState, setConfirmState] = useState<{ open: boolean; studentId: string | null; studentName: string }>({
+    open: false,
+    studentId: null,
+    studentName: "",
+  });
+
+  const showToast = (message: string, variant: "error" | "success" | "info" | "warning" = "error") => {
+    setToast({ message, variant });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   // Sync state with server data (after router.refresh)
   useEffect(() => {
@@ -41,7 +56,7 @@ export default function BatchDetailsClient({
   const handleEnrollStudent = async (student: any) => {
     // Check local capacity if defined
     if (batch.max_seats > 0 && students.length >= batch.max_seats) {
-      alert(`This batch is already full (Max: ${batch.max_seats} seats).`);
+      showToast(`This batch is already full (Max: ${batch.max_seats} seats).`, "warning");
       return;
     }
 
@@ -59,14 +74,20 @@ export default function BatchDetailsClient({
     const result = await enrollStudent(batch.id, student.id);
     if (!result.success) {
       setStudents(previousStudents);
-      alert(result.error);
+      showToast(result.error || "Failed to enroll student");
     } else {
       router.refresh();
     }
   };
 
-  const handleRemoveStudent = async (studentId: string) => {
-    if (!confirm("Are you sure you want to remove this student from the batch?")) return;
+  // Opens the custom confirm dialog instead of native confirm()
+  const handleRemoveStudent = (studentId: string, studentName: string) => {
+    setConfirmState({ open: true, studentId, studentName });
+  };
+
+  const handleConfirmRemoveStudent = async () => {
+    const studentId = confirmState.studentId!;
+    setConfirmState({ open: false, studentId: null, studentName: "" });
 
     // Optimistic Update
     const previousStudents = [...students];
@@ -75,7 +96,7 @@ export default function BatchDetailsClient({
     const result = await unenrollStudent(batch.id, studentId);
     if (!result.success) {
       setStudents(previousStudents);
-      alert(result.error);
+      showToast(result.error || "Failed to remove student");
     } else {
       router.refresh();
     }
@@ -91,9 +112,9 @@ export default function BatchDetailsClient({
     });
 
     if (result.error) {
-      alert(result.error);
+      showToast(result.error);
     } else {
-      alert("Batch details saved!");
+      showToast("Batch details saved!", "success");
       router.refresh();
     }
     setIsSaving(false);
@@ -123,6 +144,24 @@ export default function BatchDetailsClient({
 
   return (
     <div className="flex flex-col gap-8 max-w-5xl mx-auto pb-12 relative">
+      {/* Custom Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title="Remove Student"
+        message={`Are you sure you want to remove "${confirmState.studentName}" from this batch?`}
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        variant="danger"
+        onConfirm={handleConfirmRemoveStudent}
+        onCancel={() => setConfirmState({ open: false, studentId: null, studentName: "" })}
+      />
+
+      {/* Toast Banner */}
+      <ToastBanner
+        message={toast?.message ?? null}
+        variant={toast?.variant}
+        onClose={() => setToast(null)}
+      />
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -278,7 +317,7 @@ export default function BatchDetailsClient({
                     <td className="px-6 py-4 text-right">
                       {!student.isOptimistic && (
                         <button 
-                          onClick={() => handleRemoveStudent(student.id)}
+                          onClick={() => handleRemoveStudent(student.id, student.name)}
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-red-900/50 text-red-400 hover:bg-red-900/20 transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Remove

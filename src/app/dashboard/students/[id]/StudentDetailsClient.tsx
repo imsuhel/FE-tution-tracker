@@ -6,6 +6,7 @@ import { ArrowLeft, User, Phone, MapPin, Calendar, BookOpen, Clock, Download, Fi
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { ToastBanner } from "@/components/ui/ToastBanner";
 import { useRouter } from "next/navigation";
 import { createFee } from "@/lib/actions/fee.actions";
 
@@ -29,6 +30,12 @@ export default function StudentDetailsClient({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ enrollment_id: "", amount: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "error" | "success" | "info" | "warning" } | null>(null);
+
+  const showToast = (message: string, variant: "error" | "success" | "info" | "warning" = "error") => {
+    setToast({ message, variant });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   const student = initialStudent;
   const batches = initialBatches || [];
@@ -76,7 +83,10 @@ export default function StudentDetailsClient({
     if (selectedBatch) {
       const { pending } = getBatchFeeDetails(selectedBatch);
       if (Number(paymentForm.amount) > pending) {
-        alert(`Cannot record payment of ${formatCurrency(Number(paymentForm.amount))}. The pending amount for this course is ${formatCurrency(pending)}.`);
+        showToast(
+          `Cannot record payment of ${formatCurrency(Number(paymentForm.amount))}. The pending amount for this course is ${formatCurrency(pending)}.`,
+          "warning"
+        );
         return;
       }
     }
@@ -94,7 +104,7 @@ export default function StudentDetailsClient({
       setPaymentForm({ enrollment_id: "", amount: "" });
       router.refresh();
     } else {
-      alert(result.error);
+      showToast(result.error || "Failed to record payment");
     }
   };
 
@@ -106,6 +116,12 @@ export default function StudentDetailsClient({
 
   return (
     <div className="flex flex-col gap-8 max-w-6xl mx-auto pb-12">
+      {/* Toast Banner */}
+      <ToastBanner
+        message={toast?.message ?? null}
+        variant={toast?.variant}
+        onClose={() => setToast(null)}
+      />
       {/* 1. Header & Navigation */}
       <div className="flex flex-col gap-4">
         <Link

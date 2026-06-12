@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ToastBanner } from "@/components/ui/ToastBanner";
 import { 
   Search, 
   Calendar as CalendarIcon, 
@@ -27,6 +29,13 @@ export default function BatchAttendanceClient({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "error" | "success" | "info" | "warning" } | null>(null);
+  const [partialConfirmOpen, setPartialConfirmOpen] = useState(false);
+
+  const showToast = (message: string, variant: "error" | "success" | "info" | "warning" = "error") => {
+    setToast({ message, variant });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   // Initialize attendance states
   const [attendanceData, setAttendanceData] = useState<Record<string, "present" | "absent" | "holiday" | null>>(
@@ -66,9 +75,14 @@ export default function BatchAttendanceClient({
     // Validation: Ensure everything is marked
     const unmarked = initialStudents.find(s => !attendanceData[s.id]);
     if (unmarked) {
-       if (!confirm("Some students are not marked. They will not be saved. Continue?")) return;
+      // Show custom confirmation instead of native confirm()
+      setPartialConfirmOpen(true);
+      return;
     }
+    await doSave();
+  };
 
+  const doSave = async () => {
     setIsSaving(true);
     
     const records = initialStudents
@@ -80,7 +94,7 @@ export default function BatchAttendanceClient({
       }));
 
     if (records.length === 0) {
-      alert("No attendance marked to save.");
+      showToast("No attendance marked to save.", "warning");
       setIsSaving(false);
       return;
     }
@@ -93,9 +107,9 @@ export default function BatchAttendanceClient({
 
     setIsSaving(false);
     if (result.success) {
-      alert("Attendance saved successfully!");
+      showToast("Attendance saved successfully!", "success");
     } else {
-      alert(result.error || "Failed to save attendance");
+      showToast(result.error || "Failed to save attendance");
     }
   };
 
@@ -106,7 +120,7 @@ export default function BatchAttendanceClient({
 
   const handleDateChange = (newDate: string) => {
     if (isFutureDate(newDate)) {
-      alert("Future attendance cannot be marked.");
+      showToast("Future attendance cannot be marked.", "warning");
       return;
     }
     setDate(newDate);
@@ -133,6 +147,24 @@ export default function BatchAttendanceClient({
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto pb-12">
+      {/* Partial attendance confirmation */}
+      <ConfirmDialog
+        open={partialConfirmOpen}
+        title="Unmarked Students"
+        message="Some students are not marked. They will not be saved. Continue saving the rest?"
+        confirmLabel="Save Anyway"
+        cancelLabel="Go Back"
+        variant="warning"
+        onConfirm={() => { setPartialConfirmOpen(false); doSave(); }}
+        onCancel={() => setPartialConfirmOpen(false)}
+      />
+
+      {/* Toast Banner */}
+      <ToastBanner
+        message={toast?.message ?? null}
+        variant={toast?.variant}
+        onClose={() => setToast(null)}
+      />
       <div className="flex flex-col gap-4">
         <Link
           href="/dashboard/batches"
